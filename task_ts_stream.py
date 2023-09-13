@@ -35,12 +35,16 @@ class tsk_ts_stream(threading.Thread):  # 继承父类threading.Thread
                    # print(packet.to_bytes())
                     #print(packet.stream.type)
                 else:
-                    if packet.stream_index != 5:
-                        print(f"stream_index: {packet.stream_index}", packet.to_bytes())
+                    if packet.stream_index == 3:
+                        # gaze
+                        print("GAZEDATA: ", packet.to_bytes())
+                        pass
+
+                    if packet.stream_index == 5:
+                        # imu
+                        # print(f"stream_index: {packet.stream_index}", packet.to_bytes())
+                        pass
                     pass
-                    # import pdb
-                    # pdb.set_trace()
-                    # print(packet.stream.type)
 
 
 

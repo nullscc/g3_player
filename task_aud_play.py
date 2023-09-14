@@ -7,12 +7,11 @@ import time
 
 #音频播放类，从queue中接收音频码流，解码并进行播放
 class Audio_play(threading.Thread):  # 继承父类threading.Thread
-    def __init__(self, threadID, name, audio_queue, buffering_time):
+    def __init__(self, threadID, name, audio_queue):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.audio_queue = audio_queue
-        self.buffering_time = buffering_time
 
     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
         print
@@ -25,10 +24,13 @@ class Audio_play(threading.Thread):  # 继承父类threading.Thread
                         output=True)
         audio_queue = self.audio_queue
         aud_convert = av.audio.resampler.AudioResampler(format='s16', layout='mono', rate=32000)
+
         pts = 0
-        pts_delta = 0
-        buffer_time_in_ms = self.buffering_time
-        buffering_nums = 100
+        # last_pts = 0
+        last_show_time = 0
+        sleep_time = 0
+        time_need2show = 0.002
+        last_pts_delta = 0
         while True:
             if not audio_queue.empty():
                 # print("audio get")
@@ -37,36 +39,32 @@ class Audio_play(threading.Thread):  # 继承父类threading.Thread
                 time.sleep(0.030)
                 continue
 
-
-
             for frame in packet.decode():
-                #print(packet.stream.name)
-                if packet.stream.name == 'pcm_alaw' or packet.stream.name == 'pcm_ulaw' :
-                    pts_delta = 160
-                    delta_in_ms = pts_delta / 8
-                else:
-                    pts_delta = frame.samples * 90000 / frame.rate
-                    delta_in_ms = pts_delta * 1000 / frame.rate
-                buffering_nums = buffer_time_in_ms / delta_in_ms
-
-                frame.pts = pts
-                pts += pts_delta
                 frame1 = aud_convert.resample(frame)[0]
-                # import pdb
-                # pdb.set_trace()
+                pts_delta = frame1.samples * 90000 / frame1.rate
+                # frame.pts = pts
+                # pts += pts_delta
                 array = frame1.to_ndarray()
                 pcm = (
                     np
                         .frombuffer(array, np.int16)
                 )
-
-                # if audio_queue.qsize() > buffering_nums:
-                #     print("audio buffer too much " + str(audio_queue.qsize()) + " > " + str(buffering_nums))
-                #     continue;
-
+                pts_delta_time = last_pts_delta / 90000
+                show_time = time.time()
+                # print(show_time, last_show_time, pts_delta_time, time_need2show)
+                if show_time < last_show_time + pts_delta_time - time_need2show:
+                    sleep_time = last_show_time + pts_delta_time - show_time - time_need2show
+                    if sleep_time > 0.01:
+                        sleep_time = 0.01
+                    # print(sleep_time)
+                    # time.sleep(sleep_time)
+                time_start = time.time()
+                last_pts_delta = pts_delta
                 stream.write(pcm.tobytes())
-                #fo.write(pcm)
-                #print(pcm.tobytes())
+                time_need2show = time.time() - time_start
+                # last_pts = frame.pts
+                sleep_time = 0
+                last_show_time = time.time()
 
         # 停止数据流
         stream.stop_stream()

@@ -58,7 +58,7 @@ class Video_play():
                 show_height = VideoFrame.height
                 frame_show = VideoFrame
                 # #convert to rgb
-                img_array = frame_show.to_rgb().to_ndarray()[:, :, ::-1]
+                img_array = frame_show.to_ndarray(format="bgr24")
                 in_frame = img_array
     
                 # in_frame = (
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     # thread_vid_play = Video_play(2, "Video-dec", video_queue)
     thread_aud_play = Audio_play(1, "Audio-dec", audio_queue)
-    # thread_stream = tsk_ts_stream(1, "parse-stream", "rtsp://123.249.4.175:8554/live/all", video_queue, audio_queue, gaze_queue)
+    # thread_stream = tsk_ts_stream(1, "parse-stream", "rtsp://xxx", video_queue, audio_queue, gaze_queue)
     thread_stream = tsk_ts_stream(1, "parse-stream", "violin.mp4", video_queue, audio_queue, gaze_queue)
     
     thread_aud_play.start()

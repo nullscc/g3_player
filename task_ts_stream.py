@@ -2,6 +2,7 @@
 import av
 import threading
 import json
+import time
 
 #从网络上接收TS流，分离出音视频数据，发给对应的解码线程
 class tsk_ts_stream(threading.Thread):  # 继承父类threading.Thread
@@ -16,15 +17,26 @@ class tsk_ts_stream(threading.Thread):  # 继承父类threading.Thread
         print("thread " + str(stream_name) + "  started")
 
     def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数, options = ['-i','h265_aac.sdp']
+        
         if self.stream_name.startswith("rtsp"):
+            local = False
+            start = time.time()
             container = av.open(file = self.stream_name, mode = 'r', format = "rtsp",options={'rtsp_transport':'tcp'})
         else:
+            local = True
+            start = time.time()
             container = av.open(file = self.stream_name, mode = 'r')
+            
         video_queue = self.video_queue
         audio_queue = self.audio_queue
         gaze_queue = self.gaze_queue
+        already = time.time() - start
+
         while True:
             for packet in container.demux():
+                if not local and not packet.pts: continue
+                if not local and packet.pts * float(packet.time_base) <= already:
+                        continue
                 # print(packet.pts, packet.dts)
                 if packet.stream.type == 'video':
                     if packet.stream_index == 0:

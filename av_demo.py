@@ -57,9 +57,10 @@ class Video_play():
                 show_width = VideoFrame.width
                 show_height = VideoFrame.height
                 frame_show = VideoFrame
-
-                img_array = frame_show.to_ndarray(format='rgb24')
+                # #convert to rgb
+                img_array = frame_show.to_rgb().to_ndarray()[:, :, ::-1]
                 in_frame = img_array
+    
                 # in_frame = (
                 #     np
                 #         .frombuffer(img_array, np.uint8)
